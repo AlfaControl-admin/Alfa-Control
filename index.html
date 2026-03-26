@@ -1858,18 +1858,33 @@ function saveUserEditor(){
     users.push({id,name,pass,role,color,perms});
   }
   saveUsers(users);USERS=users;
+  // Google Sheets ga saqlash
+  const savedUser=editUserIdx!==null?users[editUserIdx]:users[users.length-1];
+  apiPost('saveUser',{data:{
+    login: savedUser.id,
+    name: savedUser.name,
+    role: savedUser.role,
+    color: savedUser.color,
+    hashed_pw: savedUser.pass,
+    perms: JSON.stringify(savedUser.perms||['all']),
+    is_active: true
+  }}).catch(()=>{});
   // If editing the currently logged-in user, refresh CU immediately
   if(CU&&(editUserIdx!==null?users[editUserIdx]?.id===CU.id:false)){
     CU={...CU,...users[editUserIdx]};
   }
   document.getElementById('userEditorOvl').classList.remove('on');
   populateLoginSelect();
-  buildNav();// re-render nav so changes apply immediately
+  buildNav();
   renderUsersAdmin();
 }
 function deleteUser(idx){
   if(!confirm('Foydalanuvchini o\'chirish?'))return;
-  const users=getUsers();users.splice(idx,1);saveUsers(users);USERS=users;populateLoginSelect();renderUsersAdmin();
+  const users=getUsers();
+  const login=users[idx]?.id;
+  users.splice(idx,1);saveUsers(users);USERS=users;
+  if(login) apiPost('deleteUser',{login}).catch(()=>{});
+  populateLoginSelect();renderUsersAdmin();
 }
 
 function openInspHistory(){setTop('Admin','Tekshiruv tarixi');showV('HV');renderInspHistory()}
